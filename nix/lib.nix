@@ -212,6 +212,8 @@ let
   # keep in sync with it.
   npmDeps = importNpmLock.importNpmLock {
     npmRoot = npmDepsSrc;
+    # Read directly from the repo so evaluation does not use filtered npmRoot.
+    packageLock = builtins.fromJSON (builtins.readFile (repoRoot + "/package-lock.json"));
     # The lock already records override resolutions. importNpmLock changes
     # direct specs to file:/nix/store tarballs, which conflict with the
     # original semver overrides (EOVERRIDE). Drop them only from this offline

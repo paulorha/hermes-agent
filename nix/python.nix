@@ -18,7 +18,9 @@ let
   python = pythonLock.interpreter;
   pythonPackages = python.pkgs;
 
-  workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = pythonSrc; };
+  # Resolve workspace metadata from the real checkout during evaluation.
+  workspaceRoot = ./..;
+  workspace = uv2nix.lib.workspace.loadWorkspace { inherit workspaceRoot; };
   hacks = callPackage pyproject-nix.build.hacks { };
 
   overlay = workspace.mkPyprojectOverlay {
@@ -138,6 +140,8 @@ let
           # must remain blocked.
           (final: prev: {
             hermes-agent = prev.hermes-agent.overrideAttrs (_old: {
+              # Keep the non-editable package on the filtered Python source.
+              src = pythonSrc;
               HERMES_NIX_BUILD = "1";
             });
           })
@@ -150,7 +154,6 @@ let
   # filtered pythonSrc (a cleanSourceWith set, not a path).  Filtering
   # buys nothing here anyway: the editable install reads from
   # $HERMES_PYTHON_SRC_ROOT at runtime.
-  workspaceRoot = ./..;
   editableWorkspace = uv2nix.lib.workspace.loadWorkspace { inherit workspaceRoot; };
   editableOverlay = editableWorkspace.mkEditablePyprojectOverlay {
     root = "$HERMES_PYTHON_SRC_ROOT"; # resolved at shellHook time
